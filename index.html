@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hannah's Recovery Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #faf7f2;
+    --warm-white: #fffdf9;
+    --sage: #7a9e7e;
+    --sage-light: #a8c4aa;
+    --sage-dark: #5a7d5e;
+    --amber: #c8924a;
+    --amber-light: #f0dbc0;
+    --red-soft: #c97070;
+    --red-light: #f5dede;
+    --ink: #2d2d2d;
+    --ink-soft: #555;
+    --ink-faint: #888;
+    --border: #e2ddd6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--cream); font-family: 'DM Sans', sans-serif; color: var(--ink); min-height: 100vh; }
+
+  header {
+    background: var(--warm-white); border-bottom: 1px solid var(--border);
+    padding: 16px 16px 12px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+  }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; }
+  .header-title { font-family: 'Lora', serif; font-size: 1.2rem; color: var(--sage-dark); font-weight: 600; }
+  .header-title span { color: var(--ink-faint); font-weight: 400; font-size: 0.76rem; font-family: 'DM Sans', sans-serif; display: block; margin-top: 1px; }
+
+  .date-nav {
+    display: flex; align-items: center; gap: 4px; margin-top: 11px;
+    background: var(--cream); border-radius: 10px; padding: 6px 8px; border: 1px solid var(--border);
+  }
+  .dnb {
+    background: none; border: none; cursor: pointer; color: var(--sage-dark);
+    font-size: 1.2rem; line-height: 1; padding: 1px 7px; border-radius: 6px;
+    transition: background 0.15s; font-weight: 300;
+  }
+  .dnb:hover { background: var(--border); }
+  .dnb:disabled { color: var(--border); cursor: default; }
+  .dnc { flex: 1; text-align: center; }
+  .dnc-main { font-size: 0.84rem; font-weight: 500; color: var(--ink); }
+  .dnc-sub { font-size: 0.66rem; margin-top: 2px; }
+  .badge-today { background: var(--sage); color: white; border-radius: 10px; padding: 1px 8px; font-size: 0.62rem; font-weight: 500; }
+  .badge-past { background: var(--amber-light); color: var(--amber); border-radius: 10px; padding: 1px 8px; font-size: 0.62rem; font-weight: 500; border: 1px solid #e0c090; }
+
+  .readonly-bar {
+    background: var(--amber-light); border: 1px solid #e0c090; border-radius: 8px;
+    padding: 5px 12px; margin-top: 8px; font-size: 0.7rem; color: var(--amber);
+    text-align: center; display: none;
+  }
+  .readonly-bar.show { display: block; }
+
+  .progress-bar-wrap { margin-top: 9px; background: var(--border); border-radius: 20px; height: 5px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--sage-light), var(--sage)); border-radius: 20px; transition: width 0.4s ease; }
+  .progress-label { font-size: 0.67rem; color: var(--ink-faint); margin-top: 4px; }
+
+  .tabs { display: flex; background: var(--warm-white); border-bottom: 1px solid var(--border); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { flex: 1; min-width: 66px; padding: 10px 4px; font-size: 0.68rem; font-weight: 500; color: var(--ink-faint); text-align: center; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap; }
+  .tab.active { color: var(--sage-dark); border-bottom-color: var(--sage); background: var(--cream); }
+
+  main { padding: 14px 13px 100px; max-width: 600px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card { background: var(--warm-white); border: 1px solid var(--border); border-radius: 13px; padding: 14px; margin-bottom: 11px; }
+  .card-title { font-family: 'Lora', serif; font-size: 0.88rem; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+
+  .alert { background: var(--red-light); border: 1px solid var(--red-soft); border-radius: 12px; padding: 12px 14px; margin-bottom: 13px; }
+  .alert-title { font-family: 'Lora', serif; font-size: 0.8rem; font-weight: 600; color: var(--red-soft); margin-bottom: 5px; }
+  .alert ul { list-style: none; font-size: 0.74rem; color: #7a3030; line-height: 1.7; }
+  .alert ul li::before { content: "⚠ "; }
+
+  .milestone-row { display: flex; gap: 7px; margin-bottom: 13px; }
+  .mc { flex: 1; background: var(--warm-white); border: 1px solid var(--sage-light); border-radius: 11px; padding: 9px 6px; text-align: center; background: #f0f6f0; }
+  .mc-day { font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); margin-bottom: 2px; }
+  .mc-icon { font-size: 1.1rem; }
+  .mc-label { font-size: 0.61rem; color: var(--ink-soft); margin-top: 2px; line-height: 1.3; }
+
+  .sh { font-family: 'Lora', serif; font-size: 0.92rem; font-weight: 600; color: var(--ink); margin: 14px 0 9px; }
+  .sh:first-child { margin-top: 0; }
+
+  .time-block { display: flex; align-items: flex-start; gap: 9px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .time-block:last-child { border-bottom: none; }
+  .tl { font-size: 0.66rem; font-weight: 500; color: var(--ink-faint); min-width: 50px; padding-top: 3px; }
+  .tt { flex: 1; }
+  .task-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .task-cb { width: 19px; height: 19px; border-radius: 5px; border: 1.5px solid var(--sage-light); cursor: pointer; appearance: none; -webkit-appearance: none; background: white; flex-shrink: 0; transition: all 0.15s; position: relative; }
+  .task-cb:checked { background: var(--sage); border-color: var(--sage); }
+  .task-cb:checked::after { content: ''; position: absolute; left: 5px; top: 2px; width: 5px; height: 9px; border: 2px solid white; border-top: none; border-left: none; transform: rotate(45deg); }
+  .task-cb:disabled { opacity: 0.45; cursor: default; }
+  .task-label { font-size: 0.79rem; color: var(--ink); }
+  .task-item.done .task-label { color: var(--ink-faint); text-decoration: line-through; }
+
+  .drain-card { background: var(--warm-white); border: 1px solid var(--border); border-radius: 13px; padding: 14px; margin-bottom: 11px; }
+  .drain-title { font-family: 'Lora', serif; font-size: 0.86rem; font-weight: 600; color: var(--ink); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .dtl { font-size: 0.66rem; color: var(--ink-faint); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .drain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 11px; }
+  .drain-side label { display: block; font-size: 0.63rem; font-weight: 500; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .drain-input { width: 100%; border: 1.5px solid var(--border); border-radius: 7px; padding: 7px 8px; font-size: 0.84rem; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); transition: border 0.2s; }
+  .drain-input:focus { outline: none; border-color: var(--sage-light); }
+  .drain-input:disabled { opacity: 0.5; cursor: default; }
+  .color-select { display: flex; gap: 5px; flex-wrap: wrap; }
+  .color-btn { flex: 1; min-width: 52px; padding: 6px 2px; border-radius: 7px; border: 1.5px solid var(--border); font-size: 0.62rem; font-weight: 500; cursor: pointer; background: white; color: var(--ink-soft); transition: all 0.15s; text-align: center; }
+  .color-btn.selected { border-color: var(--sage); background: var(--sage); color: white; }
+  .color-btn[data-c="Red/Bloody"].selected { background: #c97070; border-color: #c97070; }
+  .color-btn[data-c="Pink"].selected { background: #d4849e; border-color: #d4849e; }
+  .color-btn[data-c="Light Yellow"].selected { background: #b8a030; border-color: #b8a030; }
+  .color-btn:disabled { opacity: 0.45; cursor: default; }
+  .color-key { display: flex; gap: 9px; margin-bottom: 13px; flex-wrap: wrap; align-items: center; }
+  .ck-item { display: flex; align-items: center; gap: 4px; font-size: 0.64rem; color: var(--ink-faint); }
+  .ck-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .med-card { background: var(--warm-white); border: 1px solid var(--border); border-radius: 13px; padding: 14px; margin-bottom: 9px; }
+  .med-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 9px; }
+  .med-name { font-family: 'Lora', serif; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+  .med-note { font-size: 0.66rem; color: var(--ink-faint); margin-top: 2px; }
+  .med-badge { font-size: 0.6rem; background: var(--amber-light); color: var(--amber); border-radius: 20px; padding: 2px 8px; font-weight: 500; border: 1px solid #e0c090; white-space: nowrap; margin-left: 6px; }
+  .med-times { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mtb { padding: 6px 11px; border-radius: 7px; border: 1.5px solid var(--border); font-size: 0.7rem; cursor: pointer; background: var(--cream); color: var(--ink-soft); transition: all 0.15s; }
+  .mtb.logged { background: var(--amber-light); border-color: var(--amber); color: var(--amber); font-weight: 500; }
+  .mtb.add-btn { background: white; border-style: dashed; color: var(--ink-faint); }
+  .mtb.add-btn:hover { border-color: var(--sage); color: var(--sage); }
+
+  .notes-area { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 0.79rem; font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); resize: vertical; min-height: 72px; line-height: 1.5; }
+  .notes-area:focus { outline: none; border-color: var(--sage-light); }
+  .notes-area:disabled { opacity: 0.55; cursor: default; }
+
+  .stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.77rem; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-label { color: var(--ink-faint); }
+  .stat-value { font-weight: 500; }
+  .good { color: var(--sage-dark); }
+  .warn { color: var(--amber); }
+
+  /* HISTORY */
+  .hist-day { background: var(--warm-white); border: 1px solid var(--border); border-radius: 12px; padding: 12px 13px; margin-bottom: 9px; }
+  .hist-hdr { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+  .hist-date { font-family: 'Lora', serif; font-size: 0.86rem; font-weight: 600; color: var(--ink); }
+  .hist-right { display: flex; align-items: center; gap: 8px; }
+  .hist-pct { font-size: 0.7rem; font-weight: 600; }
+  .hist-chev { color: var(--ink-faint); font-size: 0.75rem; transition: transform 0.2s; }
+  .hist-chev.open { transform: rotate(180deg); }
+  .hist-body { display: none; border-top: 1px solid var(--border); padding-top: 9px; margin-top: 8px; }
+  .hist-body.open { display: block; }
+  .hrow { display: flex; justify-content: space-between; font-size: 0.72rem; padding: 3px 0; }
+  .hlbl { color: var(--ink-faint); }
+  .hval { color: var(--ink); }
+  .no-hist { text-align: center; color: var(--ink-faint); font-size: 0.8rem; padding: 28px 0; }
+
+  .call-card { background: var(--red-light); border: 1px solid var(--red-soft); border-radius: 13px; padding: 14px; margin-bottom: 13px; }
+  .call-title { font-family: 'Lora', serif; font-size: 0.88rem; font-weight: 600; color: var(--red-soft); margin-bottom: 8px; }
+  .call-btn { display: flex; align-items: center; gap: 9px; background: var(--red-soft); color: white; border-radius: 9px; padding: 10px 14px; font-size: 0.86rem; font-weight: 500; text-decoration: none; margin-bottom: 9px; }
+  .call-reasons { font-size: 0.71rem; color: #7a3030; line-height: 1.8; }
+
+  .save-banner { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--sage-dark); color: white; padding: 8px 20px; border-radius: 30px; font-size: 0.76rem; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 200; white-space: nowrap; }
+  .save-banner.show { opacity: 1; }
+
+  .reset-btn { display: block; width: 100%; padding: 10px; background: transparent; border: 1.5px solid var(--border); border-radius: 9px; font-size: 0.76rem; color: var(--ink-faint); cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 12px; transition: all 0.2s; }
+  .reset-btn:hover { border-color: var(--red-soft); color: var(--red-soft); }
+
+  .jump-btn { display: block; width: 100%; padding: 10px; background: var(--sage); color: white; border: none; border-radius: 9px; font-size: 0.78rem; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-bottom: 10px; transition: background 0.2s; }
+  .jump-btn:hover { background: var(--sage-dark); }
+
+  .view-day-btn { margin-top: 9px; width: 100%; padding: 7px; background: var(--cream); border: 1.5px solid var(--border); border-radius: 7px; font-size: 0.72rem; cursor: pointer; font-family: 'DM Sans', sans-serif; color: var(--sage-dark); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-title">Hannah's Recovery <span>Daily Care Log</span></div>
+  </div>
+
+  <div class="date-nav">
+    <button class="dnb" id="prevBtn" onclick="changeDay(-1)">&#8249;</button>
+    <div class="dnc">
+      <div class="dnc-main" id="dncMain"></div>
+      <div class="dnc-sub" id="dncSub"></div>
+    </div>
+    <button class="dnb" id="nextBtn" onclick="changeDay(1)">&#8250;</button>
+  </div>
+
+  <div class="readonly-bar" id="roBar">📖 Viewing past day — read only &nbsp;·&nbsp; <strong onclick="jumpToToday()" style="cursor:pointer;text-decoration:underline;">Go to today</strong></div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="pFill" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="pLabel"></div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('schedule',this)">📋 Schedule</div>
+  <div class="tab" onclick="showTab('drains',this)">💧 Drains</div>
+  <div class="tab" onclick="showTab('meds',this)">💊 Meds</div>
+  <div class="tab" onclick="showTab('summary',this)">📊 Summary</div>
+  <div class="tab" onclick="showTab('history',this)">📅 History</div>
+  <div class="tab" onclick="showTab('sos',this)">🚨 SOS</div>
+</div>
+
+<main>
+
+<div id="tab-schedule" class="section active">
+  <div class="milestone-row" id="milestones"></div>
+  <div class="alert">
+    <div class="alert-title">⚠ Critical Rules — Always Active</div>
+    <ul><li>Do NOT raise arms above shoulders (2 weeks)</li><li>Use thigh muscles to stand — no core</li></ul>
+  </div>
+  <p class="sh">Hourly Schedule</p>
+  <div id="schedList"></div>
+</div>
+
+<div id="tab-drains" class="section">
+  <p class="sh">Drain Log</p>
+  <div class="color-key">
+    <span style="font-size:0.64rem;color:var(--ink-faint);font-weight:500;">Color progression:</span>
+    <div class="ck-item"><div class="ck-dot" style="background:#c97070"></div>Red/Bloody</div>
+    <div class="ck-item"><div class="ck-dot" style="background:#d4849e"></div>Pink</div>
+    <div class="ck-item"><div class="ck-dot" style="background:#c8b540"></div>Light Yellow</div>
+    <div class="ck-item"><div class="ck-dot" style="background:var(--sage-light)"></div>Clear ✓</div>
+  </div>
+  <div id="drainCards"></div>
+</div>
+
+<div id="tab-meds" class="section">
+  <p class="sh">As-Needed Medications</p>
+  <div id="medCards"></div>
+  <div class="card" style="margin-top:12px;">
+    <div class="card-title">Notes / Observations</div>
+    <textarea class="notes-area" id="globalNotes" placeholder="Pain levels, mood, sleep, concerns…" oninput="saveNotes()"></textarea>
+  </div>
+</div>
+
+<div id="tab-summary" class="section">
+  <p class="sh">Day at a Glance</p>
+  <div class="card"><div class="card-title">Task Completion</div><div id="sStats"></div></div>
+  <div class="card"><div class="card-title">Drain Totals</div><div id="sDrains"></div></div>
+  <div class="card"><div class="card-title">Medication Log</div><div id="sMeds"></div></div>
+  <button class="reset-btn" id="resetBtn" onclick="resetDay()">🔄 Clear today's log and start fresh</button>
+</div>
+
+<div id="tab-history" class="section">
+  <p class="sh">Past Days</p>
+  <button class="jump-btn" onclick="jumpToToday()">↩ Jump to Today</button>
+  <div id="histList"></div>
+</div>
+
+<div id="tab-sos" class="section">
+  <p class="sh">When to Call Dr. Hehr</p>
+  <div class="call-card">
+    <div class="call-title">Emergency Contact</div>
+    <a class="call-btn" href="tel:6144426515">📞 Dr. Hehr — (614) 442-6515</a>
+    <div class="call-reasons">
+      Call immediately if:<br>
+      • Temperature over 101°F<br>
+      • Pain meds are not working<br>
+      • Sudden breast changes<br>
+      • Red streaks or pus at incision<br>
+      • Drain issues (clogging, unusual output)
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Symptom Notes</div>
+    <textarea class="notes-area" id="symptomNotes" placeholder="Log concerning symptoms here…" oninput="saveNotes()"></textarea>
+  </div>
+</div>
+
+</main>
+<div class="save-banner" id="saveBanner">✓ Saved</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────
+const SCHED = [
+  {t:"7:00 AM",  tasks:["Antibiotic & Tylenol","Deep breaths & cough"]},
+  {t:"8:00 AM",  tasks:["Drain reading (Drains tab)","Foot pumps & toe points"]},
+  {t:"9:00 AM",  tasks:["Deep breaths & cough"]},
+  {t:"10:00 AM", tasks:["Gabapentin","Short walk (use thighs!)"]},
+  {t:"11:00 AM", tasks:["Deep breaths & cough"]},
+  {t:"12:00 PM", tasks:["Tylenol","Foot pumps & toe points"]},
+  {t:"1:00 PM",  tasks:["Deep breaths & cough"]},
+  {t:"2:00 PM",  tasks:["Short walk"]},
+  {t:"3:00 PM",  tasks:["Gabapentin","Foot pumps & toe points"]},
+  {t:"4:00 PM",  tasks:["Drain reading (Drains tab)","Deep breaths & cough"]},
+  {t:"5:00 PM",  tasks:["Tylenol","Short walk"]},
+  {t:"6:00 PM",  tasks:["Foot pumps & toe points"]},
+  {t:"7:00 PM",  tasks:["Antibiotic","Deep breaths & cough"]},
+  {t:"8:00 PM",  tasks:["Gabapentin","Short walk"]},
+  {t:"9:00 PM",  tasks:["Deep breaths & cough"]},
+  {t:"10:00 PM", tasks:["Tylenol","Foot pumps & toe points"]},
+  {t:"12:00 AM", tasks:["Drain reading (Drains tab)","Rest / Sleep"]},
+];
+
+const DRAIN_TIMES = ["Morning (7–8 AM)", "Afternoon (4 PM)", "Night (12 AM)"];
+
+const MEDS = [
+  {id:"zofran",    name:"Zofran",    sub:"Nausea",      note:"Dissolve under tongue",       freq:"Every 8 hrs max", max:3},
+  {id:"oxycodone", name:"Oxycodone", sub:"Heavy Pain",  note:"Give with Stool Softener!",   freq:"Every 6 hrs max", max:3},
+  {id:"ibuprofen", name:"Ibuprofen", sub:"Starts 72hr", note:"Unlocks Sunday post-surgery", freq:"Max 3x/day",      max:3},
+];
+
+const MILESTONES = [
+  {day:"Fri 24hr", icon:"🩹", label:"Remove nausea patch"},
+  {day:"Sat 48hr", icon:"🚿", label:"Remove dressings & shower"},
+  {day:"Sun 72hr", icon:"💊", label:"Ibuprofen unlocks"},
+];
+
+const COLORS = ["Red/Bloody","Pink","Light Yellow","Clear"];
+const SK = 'hannah_v3';
+
+// ── STATE ────────────────────────────────────────────────────────────
+let db = {};
+let viewKey = '';
+let todayKey = '';
+
+function todayStr() {
+  // Recovery starts April 10, 2026 — always treat this as Day 1 base
+  // but still use real calendar date so each day is tracked correctly
+  const d = new Date();
+  return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+}
+
+// Surgery / recovery start date — used for milestone day calculations
+const RECOVERY_START = '2026-04-10';
+
+function isToday() {
+  // Allow editing on today OR on recovery start if app opened early
+  return viewKey === todayKey || (todayKey < RECOVERY_START && viewKey === RECOVERY_START);
+}
+
+function emptyDay() {
+  return {
+    tasks: {},
+    drains: [{l:'',r:'',color:''},{l:'',r:'',color:''},{l:'',r:'',color:''}],
+    meds: {},
+    notes: '',
+    symptomNotes: ''
+  };
+}
+
+function ds() {
+  if (!db[viewKey]) db[viewKey] = emptyDay();
+  const d = db[viewKey];
+  if (!d.tasks)  d.tasks = {};
+  if (!d.drains) d.drains = [{l:'',r:'',color:''},{l:'',r:'',color:''},{l:'',r:'',color:''}];
+  while (d.drains.length < 3) d.drains.push({l:'',r:'',color:''});
+  if (!d.meds)   d.meds = {};
+  if (!d.notes)  d.notes = '';
+  if (!d.symptomNotes) d.symptomNotes = '';
+  return d;
+}
+
+function persist() {
+  localStorage.setItem(SK, JSON.stringify(db));
+}
+
+function flash() {
+  const b = document.getElementById('saveBanner');
+  b.classList.add('show');
+  clearTimeout(window._st);
+  window._st = setTimeout(() => b.classList.remove('show'), 1300);
+}
+
+function saveNotes() {
+  if (!isToday()) return;
+  const d = ds();
+  d.notes = document.getElementById('globalNotes')?.value || '';
+  d.symptomNotes = document.getElementById('symptomNotes')?.value || '';
+  persist();
+  flash();
+}
+
+// ── DATE NAV ─────────────────────────────────────────────────────────
+function changeDay(delta) {
+  const d = new Date(viewKey + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  const nk = d.toISOString().slice(0,10);
+  if (nk > todayKey) return;
+  viewKey = nk;
+  renderAll();
+}
+
+function jumpToToday() {
+  viewKey = todayKey;
+  showTab('schedule', document.querySelector('.tab'));
+  renderAll();
+}
+
+function updateNav() {
+  const d = new Date(viewKey + 'T12:00:00');
+  const label = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('dncMain').textContent = label;
+
+  if (isToday()) {
+    document.getElementById('dncSub').innerHTML = '<span class="badge-today">Today</span>';
+  } else {
+    const days = Math.round((new Date(todayKey) - new Date(viewKey)) / 86400000);
+    document.getElementById('dncSub').innerHTML = `<span class="badge-past">${days} day${days!==1?'s':''} ago</span>`;
+  }
+
+  document.getElementById('nextBtn').disabled = isToday();
+  document.getElementById('roBar').classList.toggle('show', !isToday());
+  const rb = document.getElementById('resetBtn');
+  if (rb) rb.style.display = isToday() ? 'block' : 'none';
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────
+function showTab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'summary') buildSummary();
+  if (name === 'history') buildHistory();
+}
+
+// ── RENDER ALL ───────────────────────────────────────────────────────
+function renderAll() {
+  updateNav();
+  buildMilestones();
+  buildSchedule();
+  buildDrains();
+  buildMeds();
+  updateProgress();
+  buildSummary();
+
+  const d = ds();
+  const ro = !isToday();
+  const gn = document.getElementById('globalNotes');
+  const sn = document.getElementById('symptomNotes');
+  if (gn) { gn.value = d.notes; gn.disabled = ro; }
+  if (sn) { sn.value = d.symptomNotes; sn.disabled = ro; }
+}
+
+// ── MILESTONES ───────────────────────────────────────────────────────
+function buildMilestones() {
+  // Calculate days since recovery start so milestones light up on time
+  const startMs = new Date(RECOVERY_START + 'T12:00:00').getTime();
+  const viewMs  = new Date(viewKey + 'T12:00:00').getTime();
+  const daysSince = Math.round((viewMs - startMs) / 86400000);
+
+  const milestoneUnlock = [1, 2, 3]; // days after start each unlocks
+  document.getElementById('milestones').innerHTML = MILESTONES.map((m, i) => {
+    const unlocked = daysSince >= milestoneUnlock[i];
+    return `<div class="mc" style="${unlocked ? '' : 'opacity:0.45;'}">
+      <div class="mc-day">${m.day}</div>
+      <div class="mc-icon">${m.icon}</div>
+      <div class="mc-label">${m.label}</div>
+      ${unlocked ? '<div style="font-size:0.58rem;color:var(--sage-dark);font-weight:600;margin-top:3px;">✓ Unlocked</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── SCHEDULE ─────────────────────────────────────────────────────────
+function buildSchedule() {
+  const d = ds(); const ro = !isToday();
+  document.getElementById('schedList').innerHTML = SCHED.map((block, bi) =>
+    `<div class="time-block">
+      <div class="tl">${block.t}</div>
+      <div class="tt">${block.tasks.map((task, ti) => {
+        const k = `${bi}_${ti}`;
+        const chk = d.tasks[k] ? 'checked' : '';
+        const done = d.tasks[k] ? 'done' : '';
+        return `<div class="task-item ${done}" id="ti_${k}">
+          <input type="checkbox" class="task-cb" ${chk} ${ro?'disabled':''} onchange="toggleTask('${k}',this)">
+          <span class="task-label">${task}</span>
+        </div>`;
+      }).join('')}</div>
+    </div>`
+  ).join('');
+}
+
+function toggleTask(k, cb) {
+  if (!isToday()) return;
+  ds().tasks[k] = cb.checked;
+  document.getElementById('ti_'+k).classList.toggle('done', cb.checked);
+  persist(); flash(); updateProgress(); buildSummary();
+}
+
+// ── DRAINS ───────────────────────────────────────────────────────────
+function buildDrains() {
+  const d = ds(); const ro = !isToday();
+  document.getElementById('drainCards').innerHTML = DRAIN_TIMES.map((time, i) => {
+    const dr = d.drains[i] || {l:'',r:'',color:''};
+    const colorBtns = COLORS.map(c =>
+      `<button class="color-btn ${dr.color===c?'selected':''}" data-c="${c}" ${ro?'disabled':''} onclick="setColor(${i},'${c}',this)">${c}</button>`
+    ).join('');
+    return `<div class="drain-card">
+      <div class="drain-title">Reading ${i+1} <span class="dtl">${time}</span></div>
+      <div class="drain-grid">
+        <div class="drain-side"><label>Left (cc)</label>
+          <input type="number" class="drain-input" placeholder="0" value="${dr.l}" ${ro?'disabled':''} min="0" oninput="setDrain(${i},'l',this.value)"></div>
+        <div class="drain-side"><label>Right (cc)</label>
+          <input type="number" class="drain-input" placeholder="0" value="${dr.r}" ${ro?'disabled':''} min="0" oninput="setDrain(${i},'r',this.value)"></div>
+      </div>
+      <div style="font-size:0.63rem;color:var(--ink-faint);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px;">Color</div>
+      <div class="color-select">${colorBtns}</div>
+    </div>`;
+  }).join('');
+}
+
+function setDrain(i, side, val) {
+  if (!isToday()) return;
+  ds().drains[i][side] = val;
+  persist(); flash(); buildSummary();
+}
+
+function setColor(i, color, btn) {
+  if (!isToday()) return;
+  ds().drains[i].color = color;
+  btn.closest('.color-select').querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  persist(); flash();
+}
+
+// ── MEDS ─────────────────────────────────────────────────────────────
+function buildMeds() {
+  const d = ds(); const ro = !isToday();
+  document.getElementById('medCards').innerHTML = MEDS.map(med => {
+    const times = d.meds[med.id] || [];
+    const logged = times.map((t,i) =>
+      `<button class="mtb logged" ${ro?'disabled':''} onclick="removeMed('${med.id}',${i})">${t}${ro?'':' ✕'}</button>`
+    ).join('');
+    const add = (!ro && times.length < med.max)
+      ? `<button class="mtb add-btn" onclick="logMed('${med.id}')">+ Log time</button>` : '';
+    return `<div class="med-card">
+      <div class="med-header">
+        <div><div class="med-name">${med.name}</div><div class="med-note">${med.sub} · ${med.note}</div></div>
+        <div class="med-badge">${med.freq}</div>
+      </div>
+      <div class="med-times">${logged}${add}</div>
+    </div>`;
+  }).join('');
+}
+
+function logMed(id) {
+  if (!isToday()) return;
+  const d = ds();
+  if (!d.meds[id]) d.meds[id] = [];
+  const med = MEDS.find(m => m.id === id);
+  if (d.meds[id].length < med.max) {
+    d.meds[id].push(new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}));
+    persist(); flash(); buildMeds(); buildSummary();
+  }
+}
+
+function removeMed(id, idx) {
+  if (!isToday()) return;
+  ds().meds[id].splice(idx,1);
+  persist(); flash(); buildMeds(); buildSummary();
+}
+
+// ── PROGRESS ─────────────────────────────────────────────────────────
+function updateProgress() {
+  const d = ds();
+  const total = SCHED.reduce((a,b) => a + b.tasks.length, 0);
+  const done = Object.values(d.tasks).filter(Boolean).length;
+  const pct = Math.round((done/total)*100);
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pLabel').textContent =
+    isToday() ? `${done} of ${total} tasks completed today` : `${done} of ${total} tasks completed`;
+}
+
+// ── SUMMARY ──────────────────────────────────────────────────────────
+function buildSummary() {
+  const d = ds();
+  const total = SCHED.reduce((a,b) => a + b.tasks.length, 0);
+  const done = Object.values(d.tasks).filter(Boolean).length;
+  const pct = Math.round((done/total)*100);
+
+  const countKw = (kw) => {
+    let n=0;
+    SCHED.forEach((b,bi) => b.tasks.forEach((t,ti) => { if(t.includes(kw) && d.tasks[`${bi}_${ti}`]) n++; }));
+    return n;
+  };
+
+  document.getElementById('sStats').innerHTML = `
+    <div class="stat-row"><span class="stat-label">Tasks completed</span><span class="stat-value ${pct>70?'good':'warn'}">${done}/${total} (${pct}%)</span></div>
+    <div class="stat-row"><span class="stat-label">Deep breaths done</span><span class="stat-value">${countKw('Deep breaths')}</span></div>
+    <div class="stat-row"><span class="stat-label">Walks taken</span><span class="stat-value">${countKw('Short walk')}</span></div>
+    <div class="stat-row"><span class="stat-label">Foot pump sessions</span><span class="stat-value">${countKw('Foot pumps')}</span></div>`;
+
+  let tL=0,tR=0, drainHtml='';
+  DRAIN_TIMES.forEach((time,i) => {
+    const dr = d.drains[i]||{};
+    const l=parseFloat(dr.l)||0, r=parseFloat(dr.r)||0;
+    tL+=l; tR+=r;
+    drainHtml += `<div class="stat-row"><span class="stat-label">${time}</span><span class="stat-value">L:${l}cc R:${r}cc${dr.color?' · '+dr.color:''}</span></div>`;
+  });
+  drainHtml += `<div class="stat-row"><span class="stat-label">Total output</span><span class="stat-value good">L:${tL}cc  R:${tR}cc</span></div>`;
+  document.getElementById('sDrains').innerHTML = drainHtml;
+
+  document.getElementById('sMeds').innerHTML = MEDS.map(med => {
+    const times = d.meds[med.id]||[];
+    return `<div class="stat-row"><span class="stat-label">${med.name}</span><span class="stat-value">${times.length?times.join(', '):'None given'}</span></div>`;
+  }).join('');
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────
+function buildHistory() {
+  const el = document.getElementById('histList');
+  const keys = Object.keys(db).filter(k => k !== todayKey).sort().reverse();
+
+  if (!keys.length) {
+    el.innerHTML = '<div class="no-hist">No past days yet.<br>Come back tomorrow!</div>';
+    return;
+  }
+
+  el.innerHTML = keys.map(k => {
+    const d = db[k];
+    if (!d) return '';
+    const total = SCHED.reduce((a,b) => a+b.tasks.length,0);
+    const done = d.tasks ? Object.values(d.tasks).filter(Boolean).length : 0;
+    const pct = Math.round((done/total)*100);
+    const dateLabel = new Date(k+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+    let tL=0,tR=0;
+    if (d.drains) d.drains.forEach(dr => { tL+=parseFloat(dr.l)||0; tR+=parseFloat(dr.r)||0; });
+    const medRows = MEDS.map(m => {
+      const times = d.meds?.[m.id]||[];
+      return `<div class="hrow"><span class="hlbl">${m.name}</span><span class="hval">${times.length?times.join(', '):'—'}</span></div>`;
+    }).join('');
+    const cls = pct>=80?'good':pct>=50?'warn':'';
+
+    return `<div class="hist-day">
+      <div class="hist-hdr" onclick="toggleHist('${k}')">
+        <div class="hist-date">${dateLabel}</div>
+        <div class="hist-right">
+          <span class="hist-pct ${cls}">${pct}%</span>
+          <span class="hist-chev" id="hc_${k}">▼</span>
+        </div>
+      </div>
+      <div class="hist-body" id="hb_${k}">
+        <div class="hrow"><span class="hlbl">Tasks</span><span class="hval">${done}/${total}</span></div>
+        <div class="hrow"><span class="hlbl">Drain total</span><span class="hval">L:${tL}cc R:${tR}cc</span></div>
+        ${medRows}
+        ${d.notes ? `<div class="hrow" style="flex-direction:column;gap:2px;"><span class="hlbl">Notes</span><span class="hval" style="font-size:0.71rem;line-height:1.4;">${d.notes}</span></div>` : ''}
+        <button class="view-day-btn" onclick="viewDay('${k}')">📋 View full day log</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHist(k) {
+  document.getElementById('hb_'+k).classList.toggle('open');
+  document.getElementById('hc_'+k).classList.toggle('open');
+}
+
+function viewDay(k) {
+  viewKey = k;
+  showTab('schedule', document.querySelector('.tab'));
+  renderAll();
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────
+function resetDay() {
+  if (!isToday()) return;
+  if (!confirm("Clear today's entire log? This can't be undone.")) return;
+  db[todayKey] = emptyDay();
+  persist();
+  renderAll();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+function init() {
+  // Open on recovery start date (Apr 10) if app launched early
+  try { db = JSON.parse(localStorage.getItem(SK)) || {}; } catch { db = {}; }
+  todayKey = todayStr();
+  const effectiveStart = todayKey < RECOVERY_START ? RECOVERY_START : todayKey;
+  viewKey = effectiveStart;
+  if (!db[viewKey]) db[viewKey] = emptyDay();
+  renderAll();
+}
+
+init();
+</script>
+</body>
+</html>
